@@ -101,7 +101,7 @@ def create_overview_visualizations(df, selected_weeks):
     fig = go.Figure()
     fig.add_trace(go.Bar(x=summary['Areas'], y=summary['All Appointments'], name='Sum of All Appointments', text=summary['All Appointments'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
     fig.add_trace(go.Bar(x=summary['Areas'], y=summary['Total Appointments'], name='Sum of Total Appointments', text=summary['Total Appointments'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
-    fig.add_trace(go.Bar(x=summary['Areas'], y=summary['Appointments Cancelled'], name='Sum of Appointments Cancelled', text=summary['Appointments Cancelled'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
+    fig.add_trace(go.Bar(x=summary['Areas'], y=summary['Appointments Cancelled'], name='Sum of Appointments Cancelled', marker_color='red', text=summary['Appointments Cancelled'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
     fig.add_trace(go.Bar(x=summary['Areas'], y=summary['Appointments Rescheduled'], name='Sum of Appointments Rescheduled', text=summary['Appointments Rescheduled'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
     fig.add_trace(go.Bar(x=summary['Areas'], y=summary['Agenda Appointments'], name='Sum of Agenda Appointments', text=summary['Agenda Appointments'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
     fig.add_trace(go.Bar(x=summary['Areas'], y=summary['Appointments Completed'], name='Sum of Appointments Completed', text=summary['Appointments Completed'].apply(lambda x: f"{x:,.0f}"), textposition='auto'))
@@ -126,7 +126,7 @@ def create_overview_visualizations(df, selected_weeks):
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("Cancellation and Show Rates")
+    st.subheader("Cancellation, Reschedule, and Show Rates")
     cancellation_data = filtered_df.groupby('Areas').agg({
         'Appointments Cancelled': 'sum',
         'Appointments Rescheduled': 'sum',
@@ -139,7 +139,7 @@ def create_overview_visualizations(df, selected_weeks):
     cancellation_data['Show rate'] = (cancellation_data['Appointments Completed'] / cancellation_data['Agenda Appointments']).apply(lambda x: f"{x:.1%}")
     cancellation_data_melted = cancellation_data.melt(id_vars=['Areas'], value_vars=['Cancellation rate', 'Reschedule rate', 'Show rate'], var_name='Rate Type', value_name='Rate')
 
-    fig = px.bar(cancellation_data_melted, x='Areas', y='Rate', color='Rate Type', barmode='group', title='Cancellation and Show Rates by Area', text='Rate')
+    fig = px.bar(cancellation_data_melted, x='Areas', y='Rate', color='Rate Type', barmode='group', title='Cancellation, Reschedule, and Show Rates by Area', text='Rate')
     fig.update_traces(texttemplate='%{text}', textposition='outside')
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
     st.plotly_chart(fig, use_container_width=True)
