@@ -123,7 +123,7 @@ def create_overview_visualizations(df, selected_weeks):
 
     fig = px.bar(conversion_data_melted, x='Areas', y='Rate', color='Conversion Type', barmode='group', title='Conversion Rates by Area', text='Rate')
     fig.update_traces(texttemplate='%{text}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis=dict(tickformat=".1%"))
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Cancellation, Reschedule, and Show Rates")
@@ -141,8 +141,9 @@ def create_overview_visualizations(df, selected_weeks):
 
     fig = px.bar(cancellation_data_melted, x='Areas', y='Rate', color='Rate Type', barmode='group', title='Cancellation, Reschedule, and Show Rates by Area', text='Rate')
     fig.update_traces(texttemplate='%{text}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis=dict(tickformat=".1%"))
     st.plotly_chart(fig, use_container_width=True)
+
 
 # Function to create visualizations for the timeseries tab
 def create_timeseries_visualizations(df, selected_metric):
