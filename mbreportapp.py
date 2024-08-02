@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 import warnings
+import io
+from io import BytesIO
 
 # Suppress specific warnings from openpyxl
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
@@ -123,7 +125,7 @@ def create_overview_visualizations(df, selected_weeks):
 
     fig = px.bar(conversion_data_melted, x='Areas', y='Rate', color='Conversion Type', barmode='group', title='Conversion Rates by Area', text='Rate')
     fig.update_traces(texttemplate='%{text}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis=dict(tickformat=".1%"))
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis_ticksuffix = '%')
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Cancellation, Reschedule, and Show Rates")
@@ -141,9 +143,8 @@ def create_overview_visualizations(df, selected_weeks):
 
     fig = px.bar(cancellation_data_melted, x='Areas', y='Rate', color='Rate Type', barmode='group', title='Cancellation, Reschedule, and Show Rates by Area', text='Rate')
     fig.update_traces(texttemplate='%{text}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis=dict(tickformat=".1%"))
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis_ticksuffix = '%')
     st.plotly_chart(fig, use_container_width=True)
-
 
 # Function to create visualizations for the timeseries tab
 def create_timeseries_visualizations(df, selected_metric):
@@ -167,10 +168,25 @@ def create_timeseries_visualizations(df, selected_metric):
     fig = go.Figure()
     for area in timeseries_data['Areas'].unique():
         area_data = timeseries_data[timeseries_data['Areas'] == area]
-        fig.add_trace(go.Scatter(x=area_data['ISO Week'], y=area_data[selected_metric], mode='lines+markers', name=f"{selected_metric} - {area}", text=area_data[selected_metric], textposition='bottom center'))
+        fig.add_trace(go.Scatter(
+            x=area_data['ISO Week'], 
+            y=area_data[selected_metric], 
+            mode='lines+markers', 
+            name=f"{selected_metric} - {area}", 
+            text=area_data[selected_metric].apply(lambda x: f"{x:,.0f}"),
+            textposition='bottom center',
+            hovertemplate=f'{selected_metric}: %{{y:,.0f}}<extra></extra>'  # Correctly format hovertemplate as a raw string
+        ))
 
-    fig.update_layout(title='Time Series of Selected Metric by Area', xaxis_title='ISO Week', yaxis_title='Value', hovermode='x unified')
+    fig.update_layout(
+        title='Time Series of Selected Metric by Area', 
+        xaxis_title='ISO Week', 
+        yaxis_title='Value', 
+        hovermode='x unified'
+    )
     st.plotly_chart(fig, use_container_width=True)
+
+
 
 # Function to create shop details pivot table
 def create_shop_details_pivot(df, selected_weeks, selected_area_managers):
@@ -191,6 +207,16 @@ def create_shop_details_pivot(df, selected_weeks, selected_area_managers):
         df_pivot['Show rate'] = (df_pivot['Appointments_Completed'] / df_pivot['Agenda_Appointments__Heads_']).apply(lambda x: f"{x:.2%}")
         st.dataframe(df_pivot)
 
+        def to_excel(df):
+            output = BytesIO()
+            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+            df.to_excel(writer, index=False, sheet_name='Sheet1')
+            writer.close()  # Use close() instead of save()
+            processed_data = output.getvalue()
+            return processed_data
+
+        df_xlsx = to_excel(df_pivot)
+        st.download_button(label='Download data as Excel', data=df_xlsx, file_name='shop_details.xlsx')
 
 
 # Streamlit app layout
@@ -210,10 +236,12 @@ with tab1:
         st.write("Data Updated Successfully")
     
     iso_weeks = df['ISO Week'].unique()
-    selected_weeks = st.selectbox('Select ISO Week', iso_weeks, index=len(iso_weeks)-2, key='overview_iso_week')
+    selected_weeks = st.multiselect('Select ISO Weeks', iso_weeks, default=[iso_weeks[-2]], key='overview_iso_weeks')
+    months = df['Calendar[Date]'].dt.month_name().unique()
+    selected_month = st.selectbox('Select Month', months, key='overview_month')
     
-    create_overview_table(df, [selected_weeks])
-    create_overview_visualizations(df, [selected_weeks])
+    create_overview_table(df, selected_weeks)
+    create_overview_visualizations(df, selected_weeks)
 
 
 with tab2:
