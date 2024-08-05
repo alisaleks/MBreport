@@ -36,11 +36,17 @@ def load_and_process_data():
     df = df[(df['Calendar[Date]'] >= start_date) & (df['Calendar[Date]'] <= end_date)]
 
     # Add a column mapping Area Code 304 and 109 as specified
-    area_mapping = {'304': '304-Area 30 Tamara Fuente', '109': '109-Area 7 Eleonora Armonici'}
+    area_mapping = {
+        '304': '304-Area 30 Tamara Fuente',
+        '109': '109-Area 7 Eleonora Armonici',
+        '209': '209-Area 17 Jesus Tena',
+        '402': '402-Area 45 Lorena Exposito'
+    }
     df['Areas'] = df['Shop[Area Code]'].map(area_mapping).fillna('Other Areas')
 
     # Calculate the number of unique area codes in "Other Areas"
-    unique_other_areas = df[df['Areas'] == 'Other Areas']['Shop[Area Code]'].nunique()
+    unique_other_areas = df[df['Areas'] == 'Other Areas']['Shop[Area Code]'].nunique() - len([304, 109, 209, 402])
+
     df.fillna(0, inplace=True)
     df['Agenda Appointments'] = df.apply(lambda row: row['Agenda_Appointments__Heads_'] / unique_other_areas if row['Areas'] == 'Other Areas' else row['Agenda_Appointments__Heads_'], axis=1)
     df['Opportunity Test'] = df.apply(lambda row: row['Opportunity_Test__Heads_'] / unique_other_areas if row['Areas'] == 'Other Areas' else row['Opportunity_Test__Heads_'], axis=1)
@@ -254,7 +260,7 @@ with tab3:
     iso_weeks = df['ISO Week'].unique()
     selected_weeks = st.multiselect('Select ISO Weeks', iso_weeks, default=[iso_weeks[-2]], key='shop_iso_weeks')
     area_managers = df['Shop[Area Manager]'].unique()
-    default_area_managers = ['Tamara Fuente', 'Eleonora Armonici']
+    default_area_managers = ['Tamara Fuente', 'Eleonora Armonici', 'Lorena Exposito', 'Jesus Tena']
     selected_area_managers = st.multiselect('Select Area Managers', area_managers, default=default_area_managers, key='area_managers')
     
     create_shop_details_pivot(df, selected_weeks, selected_area_managers)
